@@ -36,8 +36,9 @@ function noulLine(label, answer) {
   const logit = answer.standin && answer.standin.logit;
   if (!logit || (!logit.hits.length && !(logit.counters || []).length)) return "";
   const names = logit.hits.length ? logit.hits.join(", ") : `counter ${logit.counters.join(", ")}`;
+  const hits = logit.hits.length ? ` + ${logit.hit}×${logit.hits.length}` : "";
   const counters = (logit.counters || []).length ? ` − ${num(Math.abs(logit.counter), 1)}×${logit.counters.length}` : "";
-  return `<li>${label}: ${names}. <span class="eq">z = ${num(logit.prior, 2)} + ${logit.hit}×${logit.hits.length}${counters} = ${num(logit.z, 2)} → ${num(answer.noul, 2)}</span></li>`;
+  return `<li>${label}: ${names}.<p class="eq">z = ${num(logit.prior, 2)}${hits}${counters} = ${num(logit.z, 2)} → ${num(answer.noul, 2)}</p></li>`;
 }
 
 function mathSteps(payload) {
