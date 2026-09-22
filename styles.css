@@ -175,15 +175,15 @@ textarea:focus, .spot input:focus, .presets button:focus-visible {
 }
 
 .math-steps {
-  margin: 0.9rem 0 0;
+  margin: 0.5rem 0 0;
   padding: 0 0 0 1.15rem;
   color: var(--ink);
   font-size: 1.02rem;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 .math-steps li {
-  margin: 0.85rem 0;
+  margin: 0.45rem 0;
 }
 
 .math-steps strong {
@@ -194,10 +194,14 @@ textarea:focus, .spot input:focus, .presets button:focus-visible {
   font-family: ui-monospace, "Source Code Pro", Menlo, Consolas, monospace;
   font-size: 0.9rem;
   color: var(--muted);
-  margin: 0.28rem 0 0;
+  margin: 0.2rem 0 0;
 }
 
 .eq sup { font-size: 0.7em; }
+
+.math-rule {
+  margin: 0.65rem 0 0;
+}
 
 @media (max-width: 520px) {
   .cols { grid-template-columns: 1fr; gap: 1.1rem; }
