@@ -93,7 +93,7 @@ function mathSteps(payload) {
   if (base.best === adj.best) {
     steps.push(`<li><strong>After the note, still ${adj.best}.</strong></li>`);
   } else {
-    steps.push(`<li><strong>After the note, ${adj.best}.</strong> ${num(adj.actions[adj.best].expected_points)} against ${base.best} at ${num(adj.actions[base.best].expected_points)}.</li>`);
+    steps.push(`<li><strong>After the note, ${adj.best}:</strong> ${num(adj.actions[adj.best].expected_points)} against ${base.best} at ${num(adj.actions[base.best].expected_points)}.</li>`);
   }
   return steps.join("");
 }
