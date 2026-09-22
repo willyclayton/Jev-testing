@@ -133,7 +133,7 @@ textarea:focus, .spot input:focus, .presets button:focus-visible {
   gap: 1.25rem;
 }
 
-ol {
+.cols ol {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -141,7 +141,7 @@ ol {
   font-size: 0.92rem;
 }
 
-ol li {
+.cols ol li {
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
@@ -149,8 +149,52 @@ ol li {
   color: var(--muted);
 }
 
-ol li.best {
+.cols ol li.best {
   color: var(--accent);
+}
+
+#math {
+  margin-top: 2rem;
+}
+
+#math summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.95rem;
+  list-style: none;
+}
+
+#math summary::-webkit-details-marker { display: none; }
+
+#math summary::before {
+  content: "▸ ";
+}
+
+#math[open] summary::before {
+  content: "▾ ";
+}
+
+.math-steps {
+  margin: 0.9rem 0 0;
+  padding: 0 0 0 1.15rem;
+  color: var(--ink);
+  font-size: 1.02rem;
+  line-height: 1.45;
+}
+
+.math-steps li {
+  margin: 0.85rem 0;
+}
+
+.math-steps strong {
+  font-weight: 600;
+}
+
+.eq {
+  font-family: ui-monospace, "Source Code Pro", Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin: 0.28rem 0 0;
 }
 
 @media (max-width: 520px) {
