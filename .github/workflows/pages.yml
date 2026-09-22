@@ -1,7 +1,7 @@
 name: pages
 on:
   push:
-    branches: [main]
+    branches: [main, cursor/fix-pages-94c8]
   workflow_dispatch:
 permissions:
   contents: read
