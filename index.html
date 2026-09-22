@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fourth down</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main>
+    <h1>Fourth down</h1>
+    <nav id="presets" class="presets"></nav>
+    <p class="spot">
+      Fourth and <input id="yards-to-go" type="number" min="1" max="30" value="3" />,
+      <input id="yards-to-endzone" type="number" min="1" max="99" value="32" /> yards to the end zone.
+    </p>
+    <textarea id="note" rows="3" placeholder="Sideline note"></textarea>
+
+    <section class="result" aria-live="polite">
+      <p id="call"></p>
+      <p id="why"></p>
+      <div class="cols">
+        <div>
+          <h2>Tables</h2>
+          <ol id="baseline"></ol>
+        </div>
+        <div>
+          <h2>After the note</h2>
+          <ol id="adjusted"></ol>
+        </div>
+      </div>
+      <p id="read"></p>
+    </section>
+  </main>
+  <script src="lab.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

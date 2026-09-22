@@ -1,0 +1,161 @@
+:root {
+  color-scheme: light;
+  --ink: #1a1916;
+  --muted: #6d675e;
+  --paper: #f4f1ea;
+  --accent: #1a6b46;
+  font-family: Georgia, "Iowan Old Style", Palatino, serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+main {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 2.75rem 1.25rem 4rem;
+}
+
+h1 {
+  font-size: 1.85rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.1rem;
+}
+
+h2 {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 0.55rem;
+  font-family: ui-monospace, "Source Code Pro", Menlo, Consolas, monospace;
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin: 0 0 1.4rem;
+}
+
+.presets button {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.presets button:hover { color: var(--ink); }
+.presets button.active {
+  color: var(--ink);
+  box-shadow: inset 0 -1px 0 var(--ink);
+}
+
+.spot {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+  line-height: 1.5;
+}
+
+.spot input {
+  width: 3.1rem;
+  font: inherit;
+  font-size: 1.15rem;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--ink);
+  padding: 0 0.1rem;
+  text-align: center;
+  appearance: textfield;
+}
+
+.spot input::-webkit-outer-spin-button,
+.spot input::-webkit-inner-spin-button {
+  appearance: none;
+}
+
+textarea {
+  width: 100%;
+  margin: 0 0 1.75rem;
+  padding: 0;
+  font: inherit;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #d5cec2;
+  resize: vertical;
+}
+
+textarea:focus, .spot input:focus, .presets button:focus-visible {
+  outline: none;
+}
+
+.spot input:focus, textarea:focus {
+  border-bottom-color: var(--accent);
+}
+
+#call {
+  font-size: clamp(3.2rem, 12vw, 4.4rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+  margin: 0 0 0.4rem;
+  text-transform: capitalize;
+}
+
+#why, #read {
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.4;
+  margin: 0 0 1.5rem;
+}
+
+#read {
+  margin: 1.4rem 0 0;
+  font-size: 0.95rem;
+}
+
+.cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: ui-monospace, "Source Code Pro", Menlo, Consolas, monospace;
+  font-size: 0.92rem;
+}
+
+ol li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.22rem 0;
+  color: var(--muted);
+}
+
+ol li.best {
+  color: var(--accent);
+}
+
+@media (max-width: 520px) {
+  .cols { grid-template-columns: 1fr; gap: 1.1rem; }
+  .spot input { width: 2.7rem; }
+}
