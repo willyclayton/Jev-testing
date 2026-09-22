@@ -63,9 +63,22 @@ test("the word kick moves the Choice and the math can still go", () => {
   const play = result.classification.play_call.play_call;
   assert.equal(play.choice, "kick");
   assert.equal(play.demo_confidence, play.confidence);
+  assert.ok(play.probabilities.kick > 0.7);
   assert.equal(result.decision.adjusted.best, "go");
   const windPlay = S.worksheet(WIND).classification.play_call.play_call;
   assert.notEqual(windPlay.choice, "kick");
+});
+
+test("noul is a logit of phrase hits, and kick raises P(kick)", () => {
+  assert.ok(Math.abs(S.sigmoid(S.logit(0.25)) - 0.25) < 1e-9);
+  const empty = S.worksheet({ ...WIND, sideline_note: "" });
+  const kickWord = S.worksheet({ ...WIND, sideline_note: "kick" });
+  assert.ok(empty.classification.fanout.front_compromised.noul < 0.1);
+  assert.ok(kickWord.classification.play_call.play_call.probabilities.kick > empty.classification.play_call.play_call.probabilities.kick);
+  assert.equal(kickWord.classification.play_call.play_call.choice, "kick");
+  const front = S.worksheet(WIND).classification.fanout.front_compromised.standin.logit;
+  assert.equal(front.hits.length, 3);
+  assert.ok(front.z > 3);
 });
 
 test("chatter and a zeroed weight leave the tables in charge", () => {

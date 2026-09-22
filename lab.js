@@ -167,6 +167,32 @@
     return Number(n).toFixed(digits);
   }
 
+  const LOGIT = {
+    prior: Math.log(0.06 / 0.94),
+    hit: 2,
+    counter: -2.5,
+    play: 2.2,
+  };
+
+  function logit(p) {
+    const q = Math.min(1 - 1e-6, Math.max(1e-6, Number(p)));
+    return Math.log(q / (1 - q));
+  }
+
+  function sigmoid(z) {
+    if (z >= 20) return 1;
+    if (z <= -20) return 0;
+    return 1 / (1 + Math.exp(-z));
+  }
+
+  function softmax(logits) {
+    const keys = Object.keys(logits);
+    const max = Math.max(...keys.map((key) => logits[key]));
+    const exps = Object.fromEntries(keys.map((key) => [key, Math.exp(logits[key] - max)]));
+    const sum = Object.values(exps).reduce((total, value) => total + value, 0);
+    return Object.fromEntries(keys.map((key) => [key, exps[key] / sum]));
+  }
+
   function demoConfidence(probabilities) {
     const values = Object.values(probabilities);
     const count = values.length;
@@ -325,17 +351,10 @@
   }
 
   function noulFrom(matched, fine) {
-    let value;
-    let how;
-    if (!matched.length && !fine.length) {
-      value = 0.06;
-      how = "no listed phrase matched, so the rubric returns 0.06 (a no, not a coin flip)";
-    } else {
-      value = 0.15 + 0.28 * matched.length - 0.4 * fine.length;
-      how = `0.15 + 0.28 × ${matched.length} hit(s) − 0.40 × ${fine.length} counter-phrase(s)`;
-    }
-    value = Math.round(Math.max(0.02, Math.min(0.96, value)) * 10000) / 10000;
-    return [value, how];
+    const z = LOGIT.prior + LOGIT.hit * matched.length + LOGIT.counter * fine.length;
+    const value = Math.round(Math.max(0.02, Math.min(0.96, sigmoid(z))) * 10000) / 10000;
+    const how = `z = ${fixed(LOGIT.prior, 2)} + ${LOGIT.hit}×${matched.length}${fine.length ? ` − ${Math.abs(LOGIT.counter)}×${fine.length}` : ""} = ${fixed(z, 2)}; σ(z) = ${fixed(value, 3)}`;
+    return [value, how, { prior: LOGIT.prior, hit: LOGIT.hit, counter: LOGIT.counter, z, hits: matched, counters: fine }];
   }
 
   function peaked(keys, winner, peak) {
@@ -354,9 +373,9 @@
     const kickerBad = hits(text, KICKER_BAD);
     const kickerFine = hits(text, KICKER_FINE);
     const prevent = hits(text, PREVENT_PHRASES);
-    const [frontValue, frontHow] = noulFrom(front, []);
-    const [kickerValue, kickerHow] = noulFrom(kickerBad, kickerFine);
-    const [preventValue, preventHow] = noulFrom(prevent, []);
+    const [frontValue, frontHow, frontLogit] = noulFrom(front, []);
+    const [kickerValue, kickerHow, kickerLogit] = noulFrom(kickerBad, kickerFine);
+    const [preventValue, preventHow, preventLogit] = noulFrom(prevent, []);
     const scrambleLevel = Math.min(3, front.length);
     const scrambleProbs = { 0: 0, 1: 0, 2: 0, 3: 0 };
     let scrambleHow;
@@ -387,9 +406,9 @@
     const [score] = scoreFromProbabilities(scrambleProbs);
     return {
       fanout: {
-        front_compromised: { type: "noul", noul: frontValue, standin: { how: frontHow, hits: front } },
-        kicker_conditions_bad: { type: "noul", noul: kickerValue, standin: { how: kickerHow, hits: kickerBad.concat(kickerFine.map((phrase) => `counter:${phrase}`)) } },
-        prevent_look: { type: "noul", noul: preventValue, standin: { how: preventHow, hits: prevent } },
+        front_compromised: { type: "noul", noul: frontValue, standin: { how: frontHow, hits: front, logit: frontLogit } },
+        kicker_conditions_bad: { type: "noul", noul: kickerValue, standin: { how: kickerHow, hits: kickerBad.concat(kickerFine.map((phrase) => `counter:${phrase}`)), logit: kickerLogit } },
+        prevent_look: { type: "noul", noul: preventValue, standin: { how: preventHow, hits: prevent, logit: preventLogit } },
         front_scramble: {
           type: "score",
           score,
@@ -407,21 +426,24 @@
     const text = (sidelineNote || "").toLowerCase();
     const found = PLAY_WORDS.filter(([, pattern]) => pattern.test(text)).map(([name]) => name);
     const keys = ["go", "kick", "punt"];
-    let probabilities;
+    const logits = { go: 0, kick: 0, punt: 0 };
+    found.forEach((name) => {
+      logits[name] += LOGIT.play;
+    });
+    const probabilities = softmax(logits);
     let note;
     if (found.length === 1) {
-      probabilities = peaked(keys, found[0], 0.8);
-      note = `The note contains a play-call word for ${found[0]}. The rubric followed the word and did no expected-points math.`;
+      note = `"${found[0]}" adds +${LOGIT.play} to that log-odds. Softmax raises P(${found[0]}). This is the play-call word, not the field-goal make rate.`;
     } else if (found.length > 1) {
-      const share = 0.9 / found.length;
-      const other = 0.1 / (3 - found.length);
-      probabilities = Object.fromEntries(keys.map((key) => [key, found.includes(key) ? share : other]));
-      note = "The note names more than one action. The rubric splits across the words it found.";
+      note = `Play-call words ${found.join(", ")} each add +${LOGIT.play}. Softmax splits across them.`;
     } else {
-      probabilities = { go: 0.34, kick: 0.33, punt: 0.33 };
-      note = "No play-call word. The rubric returns a near-even split and does not consult the conversion table or the expected-points curve.";
+      note = "No play-call word. Log-odds stay at 0, so softmax is nearly even and does not consult expected points.";
     }
-    return { play_call: answerChoice(probabilities, note) };
+    const answer = answerChoice(probabilities, note);
+    answer.standin.found = found;
+    answer.standin.logits = logits;
+    answer.standin.boost = LOGIT.play;
+    return { play_call: answer };
   }
 
   function classifyProbe() {
@@ -687,9 +709,9 @@
   }
 
   return {
-    PRESETS, DEFAULT_WEIGHTS, DEFAULT_KICKOFF_EP, DEFAULT_NET_PUNT, SOURCES,
+    PRESETS, DEFAULT_WEIGHTS, DEFAULT_KICKOFF_EP, DEFAULT_NET_PUNT, SOURCES, LOGIT,
     FANOUT, TRAP, PLAY_CALL, PROBE,
     evaluateActions, firstAndTenEp, worksheet, decide, probe, noteState, fullState,
-    demoConfidence, scoreFromProbabilities,
+    demoConfidence, scoreFromProbabilities, logit, sigmoid, softmax,
   };
 });

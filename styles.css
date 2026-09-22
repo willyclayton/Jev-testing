@@ -197,6 +197,8 @@ textarea:focus, .spot input:focus, .presets button:focus-visible {
   margin: 0.28rem 0 0;
 }
 
+.eq sup { font-size: 0.7em; }
+
 @media (max-width: 520px) {
   .cols { grid-template-columns: 1fr; gap: 1.1rem; }
   .spot input { width: 2.7rem; }
