@@ -21,6 +21,8 @@ node --test tests/lab.test.mjs
 1. Settings → Pages → Source: **GitHub Actions**
 2. The workflow in `.github/workflows/pages.yml` publishes `index.html`, `app.js`, `lab.js`, and `styles.css`.
 
-The URL will be https://willyclayton.github.io/Jev-testing/
+The URL is https://willyclayton.github.io/Jev-testing/
+
+The first Actions run happened before Pages was turned on, so it published nothing. Re-run the `pages` workflow after enabling Pages, or push to `main`.
 
 Cloudflare Pages is the better host later, if you add live Jev: it can hold `TYPESAFE_API_KEY` in a Function. GitHub Pages cannot. Do not put a key in this repository.
