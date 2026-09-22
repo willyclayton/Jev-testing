@@ -32,6 +32,26 @@ function term(action, name) {
   return action.terms.find((item) => item.name === name);
 }
 
+function signed(value, digits = 2) {
+  const n = Number(value);
+  return `${n >= 0 ? "+" : ""}${num(n, digits)}`;
+}
+
+function hitsLine(answer) {
+  const logit = answer.standin && answer.standin.logit;
+  if (!logit) return "live answer";
+  const hits = logit.hits.length ? logit.hits.join(", ") : "none";
+  const counters = (logit.counters || []).length ? `; counter ${logit.counters.join(", ")}` : "";
+  return `${hits}${counters}`;
+}
+
+function noulEq(answer) {
+  const logit = answer.standin && answer.standin.logit;
+  if (!logit) return `<p class="eq">noul ${num(answer.noul, 3)}</p>`;
+  const counter = logit.counters.length ? ` − ${num(Math.abs(logit.counter), 1)}×${logit.counters.length}` : "";
+  return `<p class="eq">z = ${num(logit.prior, 2)} + ${logit.hit}×${logit.hits.length}${counter} = ${num(logit.z, 2)}</p><p class="eq">σ(z) = 1/(1+e<sup>−z</sup>) = ${num(answer.noul, 3)}</p>`;
+}
+
 function mathSteps(payload) {
   const decision = payload.decision;
   const sit = situation();
@@ -40,6 +60,8 @@ function mathSteps(payload) {
   const go = base.actions.go;
   const kick = base.actions.kick;
   const punt = base.actions.punt;
+  const fanout = payload.classification.fanout;
+  const play = payload.classification.play_call.play_call;
   const successYards = sit.yards_to_endzone - sit.yards_to_go;
   const failYards = 100 - sit.yards_to_endzone;
   const net = decision.constants.net_punt;
@@ -48,9 +70,7 @@ function mathSteps(payload) {
   const fail = term(go, "fail value");
   const make = term(kick, "make value");
   const miss = term(kick, "miss value");
-  const pGo = go.p;
-  const pKick = kick.p;
-
+  const L = Sideline.LOGIT;
   const successText = successYards <= 0
     ? `a conversion is a touchdown, worth ${num(success.value)}`
     : `a first down ${successYards} yards from the end zone is worth ${num(success.value)}`;
@@ -61,39 +81,45 @@ function mathSteps(payload) {
     ? `A ${net}-yard net punt from here is a touchback. Opponent first-and-10 from their 25 is worth ${num(punt.expected_points)}.`
     : `A ${net}-yard net punt from here leaves the opponent ${landing} yards from the end zone, worth ${num(punt.expected_points)}.`;
 
+  const playLogits = play.standin && play.standin.logits
+    ? `ℓ = (go ${num(play.standin.logits.go, 1)}, kick ${num(play.standin.logits.kick, 1)}, punt ${num(play.standin.logits.punt, 1)})`
+    : "";
+  const playFound = (play.standin && play.standin.found) || [];
+  const playWord = playFound.length
+    ? `"${playFound.join(", ")}" adds +${L.play} to that log-odds, so P(${play.choice}) = ${pct(play.probabilities[play.choice])}. That is the play-call word, not the make rate.`
+    : `No go/kick/punt word. ℓ stays at 0, softmax is even, P(kick) = ${pct(play.probabilities.kick)}.`;
+
   const steps = [
     `<li><strong>Spot.</strong> Fourth and ${sit.yards_to_go}, ${sit.yards_to_endzone} yards to the end zone. The kick is from ${kick.kick_distance} yards (${sit.yards_to_endzone} + 17).</li>`,
-    `<li><strong>Go.</strong> Fourth-and-${sit.yards_to_go} converts ${pct(pGo)} of the time. If it works, ${successText}. If it fails, the opponent takes over ${failYards} yards from their end zone, worth ${num(fail.value)}.<p class="eq">${num(pGo, 3)} × ${num(success.value)} + ${num(1 - pGo, 3)} × ${num(fail.value)} = ${num(go.expected_points)}</p></li>`,
-    `<li><strong>Kick.</strong> A ${kick.kick_distance}-yard field goal is made ${pct(pKick)} of the time. A make is ${num(make.value)} (3 minus a ${num(decision.constants.kickoff_ep)} kickoff). ${missHow}.<p class="eq">${num(pKick, 3)} × ${num(make.value)} + ${num(1 - pKick, 3)} × ${num(miss.value)} = ${num(kick.expected_points)}</p></li>`,
-    `<li><strong>Punt.</strong> ${puntText}</li>`,
-    `<li><strong>Tables pick ${base.best}.</strong> Go ${num(go.expected_points)}, kick ${num(kick.expected_points)}, punt ${num(punt.expected_points)}.</li>`,
+    `<li><strong>Logit.</strong> A yes/no is log-odds z, then a probability. Prior is “no”: logit(0.06) = ${num(L.prior, 2)}. Each matching phrase adds +${L.hit}. A counter-phrase subtracts ${Math.abs(L.counter)}.<p class="eq">σ(z) = 1/(1+e<sup>−z</sup>)</p><p class="eq">z = ${num(L.prior, 2)} + ${L.hit}×hits${` − ${Math.abs(L.counter)}×counters`}</p></li>`,
+    `<li><strong>Front.</strong> ${hitsLine(fanout.front_compromised)}.${noulEq(fanout.front_compromised)}</li>`,
+    `<li><strong>Kick conditions.</strong> ${hitsLine(fanout.kicker_conditions_bad)}.${noulEq(fanout.kicker_conditions_bad)}</li>`,
+    `<li><strong>Prevent.</strong> ${hitsLine(fanout.prevent_look)}.${noulEq(fanout.prevent_look)}</li>`,
+    `<li><strong>Play-call word.</strong> ${playWord}<p class="eq">${playLogits}</p><p class="eq">P(a) = e<sup>ℓ_a</sup> / Σ e<sup>ℓ</sup> → go ${pct(play.probabilities.go)}, kick ${pct(play.probabilities.kick)}, punt ${pct(play.probabilities.punt)}</p></li>`,
   ];
 
-  const moved = decision.adjustment.steps.filter((step) => Math.abs(step.delta) > 0.0005);
-  if (!moved.length) {
-    steps.push(`<li><strong>The note.</strong> Nothing in it changes a rate. The call stays ${base.best}.</li>`);
-    return steps.join("");
-  }
+  const evidenceLines = decision.adjustment.steps
+    .filter((step) => step.name !== "scramble" && Math.abs(step.delta) > 0.0005)
+    .map((step) => {
+      const noul = step.name === "kicker" ? fanout.kicker_conditions_bad.noul
+        : step.name === "prevent" ? fanout.prevent_look.noul
+        : fanout.front_compromised.noul;
+      const rate = step.name === "kicker" ? "make rate" : "conversion";
+      return `<p class="eq">${step.name}: noul ${num(noul, 3)} → evidence ${num(step.evidence, 2)}, Δ = ${num(step.weight, 2)}×${num(step.evidence, 2)} = ${signed(step.delta, 3)} on ${rate}</p>`;
+    })
+    .join("");
+  steps.push(`<li><strong>Rates.</strong> noul below 0.65 does not move a table. Above 0.65, evidence = (noul − 0.65) / 0.35.${evidenceLines}<p class="eq">convert ${pct(go.p_table)} → ${pct(adj.actions.go.p)}</p><p class="eq">make ${pct(kick.p_table)} → ${pct(adj.actions.kick.p)}</p></li>`);
 
-  const conv = moved.filter((step) => step.name !== "kicker");
-  const kicker = moved.find((step) => step.name === "kicker");
-  const names = { front: "Tired front", prevent: "Prevent look", scramble: "Scrambled front" };
-  const bits = [];
-  if (conv.length) {
-    bits.push(`${conv.map((step) => names[step.name] || step.name).join(" and ")}: conversion ${pct(go.p_table)} → ${pct(adj.actions.go.p)}`);
-  }
-  if (kicker) {
-    bits.push(`Kick conditions: make rate ${pct(kick.p_table)} → ${pct(adj.actions.kick.p)}`);
-  }
-  const ago = adj.actions.go;
-  const akick = adj.actions.kick;
   steps.push(
-    `<li><strong>The note.</strong> ${bits.join(". ")}.<p class="eq">go ${num(ago.p, 3)} × ${num(success.value)} + ${num(1 - ago.p, 3)} × ${num(fail.value)} = ${num(ago.expected_points)}</p><p class="eq">kick ${num(akick.p, 3)} × ${num(make.value)} + ${num(1 - akick.p, 3)} × ${num(miss.value)} = ${num(akick.expected_points)}</p></li>`,
+    `<li><strong>Go.</strong> If it works, ${successText}. If it fails, the opponent takes over ${failYards} yards from their end zone, worth ${num(fail.value)}.<p class="eq">${num(adj.actions.go.p, 3)} × ${num(success.value)} + ${num(1 - adj.actions.go.p, 3)} × ${num(fail.value)} = ${num(adj.actions.go.expected_points)}</p></li>`,
+    `<li><strong>Kick.</strong> A make is ${num(make.value)} (3 minus a ${num(decision.constants.kickoff_ep)} kickoff). ${missHow}.<p class="eq">${num(adj.actions.kick.p, 3)} × ${num(make.value)} + ${num(1 - adj.actions.kick.p, 3)} × ${num(miss.value)} = ${num(adj.actions.kick.expected_points)}</p></li>`,
+    `<li><strong>Punt.</strong> ${puntText}</li>`,
   );
+
   if (base.best === adj.best) {
-    steps.push(`<li><strong>After the note, still ${adj.best}.</strong></li>`);
+    steps.push(`<li><strong>Call ${adj.best}.</strong> Tables ${num(base.actions[base.best].expected_points)}, after the note ${num(adj.actions[adj.best].expected_points)}.</li>`);
   } else {
-    steps.push(`<li><strong>After the note, ${adj.best}:</strong> ${num(adj.actions[adj.best].expected_points)} against ${base.best} at ${num(adj.actions[base.best].expected_points)}.</li>`);
+    steps.push(`<li><strong>Call ${adj.best}.</strong> Tables had ${base.best} at ${num(base.actions[base.best].expected_points)}. After the logits, ${adj.best} ${num(adj.actions[adj.best].expected_points)} against ${base.best} ${num(adj.actions[base.best].expected_points)}.</li>`);
   }
   return steps.join("");
 }
