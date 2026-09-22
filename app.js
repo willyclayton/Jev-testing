@@ -99,7 +99,7 @@ function mathSteps(payload) {
   ];
 
   const evidenceLines = decision.adjustment.steps
-    .filter((step) => step.name !== "scramble")
+    .filter((step) => step.name !== "scramble" && Math.abs(step.delta) > 0.0005)
     .map((step) => {
       const noul = step.name === "kicker" ? fanout.kicker_conditions_bad.noul
         : step.name === "prevent" ? fanout.prevent_look.noul

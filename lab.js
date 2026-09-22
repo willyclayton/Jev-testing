@@ -370,8 +370,8 @@
   function classifyNote(sidelineNote) {
     const text = sidelineNote || "";
     const front = hits(text, FRONT_PHRASES);
-    const kickerBad = hits(text, KICKER_BAD);
     const kickerFine = hits(text, KICKER_FINE);
+    const kickerBad = hits(text, KICKER_BAD).filter((phrase) => !kickerFine.some((counter) => counter.includes(phrase)));
     const prevent = hits(text, PREVENT_PHRASES);
     const [frontValue, frontHow, frontLogit] = noulFrom(front, []);
     const [kickerValue, kickerHow, kickerLogit] = noulFrom(kickerBad, kickerFine);
