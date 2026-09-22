@@ -48,14 +48,14 @@ function render(payload) {
     $("read").textContent = "";
     return;
   }
-  const play = payload.classification.play_call.play_call.choice;
+  const play = payload.classification.play_call.play_call;
   const before = decision.baseline.best;
   const after = decision.adjusted.best;
   $("call").textContent = after;
   $("baseline").innerHTML = list(decision.baseline);
   $("adjusted").innerHTML = list(decision.adjusted);
   let why = before === after ? `Both pick ${after}.` : `The note moved it from ${before} to ${after}.`;
-  if (play !== after) why += ` The note says ${play}.`;
+  if (play.choice !== after && play.confidence > 0.4) why += ` The note says ${play.choice}.`;
   $("why").textContent = why;
   $("read").textContent = noted(payload.classification.fanout);
 }

@@ -10,11 +10,8 @@
   <main>
     <h1>Fourth down</h1>
     <nav id="presets" class="presets"></nav>
-    <p class="spot">
-      Fourth and <input id="yards-to-go" type="number" min="1" max="30" value="3" />,
-      <input id="yards-to-endzone" type="number" min="1" max="99" value="32" /> yards to the end zone.
-    </p>
-    <textarea id="note" rows="3" placeholder="Sideline note"></textarea>
+    <p class="spot">Fourth and <input id="yards-to-go" inputmode="numeric" maxlength="2" value="3" />, <input id="yards-to-endzone" inputmode="numeric" maxlength="2" value="32" /> yards to the end zone.</p>
+    <textarea id="note" rows="2" placeholder="Sideline note"></textarea>
 
     <section class="result" aria-live="polite">
       <p id="call"></p>

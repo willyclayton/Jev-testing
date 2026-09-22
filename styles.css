@@ -69,22 +69,20 @@ h2 {
 }
 
 .spot input {
-  width: 3.1rem;
+  width: 1.35em;
   font: inherit;
   font-size: 1.15rem;
   color: var(--ink);
   background: transparent;
   border: 0;
   border-bottom: 1px solid var(--ink);
-  padding: 0 0.1rem;
+  padding: 0;
+  margin: 0;
   text-align: center;
-  appearance: textfield;
+  vertical-align: baseline;
 }
 
-.spot input::-webkit-outer-spin-button,
-.spot input::-webkit-inner-spin-button {
-  appearance: none;
-}
+#yards-to-endzone { width: 1.55em; }
 
 textarea {
   width: 100%;
@@ -97,7 +95,7 @@ textarea {
   background: transparent;
   border: 0;
   border-bottom: 1px solid #d5cec2;
-  resize: vertical;
+  resize: none;
 }
 
 textarea:focus, .spot input:focus, .presets button:focus-visible {
